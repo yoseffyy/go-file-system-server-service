@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package proto;
+
+message CreateReq {
+    File file = 1;
+}
+
+message ReadReq {
+    string owner = 1;
+    string id = 2;
+}
+
+message UpdateReq {
+    string owner = 1;
+    File file = 2;
+}
+
+message DeleteReq {
+    string owner = 1;
+    string id = 2;
+}
+
+message FileRes {
+    File file = 1;
+}
+
+message BoolRes {
+    bool success = 1;
+}
+
+message ListFilesReq {
+    string owner = 1;
+}
+
+message ListFilesRes {
+    repeated File files = 1;
+}
+
+message File {
+    string id = 1;
+    string owner = 2;
+    string path = 3;
+    string name = 4;
+    bool isFolder = 5;
+}
+
+message Owner {
+    string id = 1;
+}
+
+message AddOwnerReq {
+    string owner = 1;
+    string ownerToAdd = 2;
+    string path = 3;
+}
+
+service AddService {
+    rpc Create(CreateReq) returns (FileRes);
+    rpc Read(ReadReq) returns (FileRes);
+    rpc Update(UpdateReq) returns (FileRes);
+    rpc Delete(DeleteReq) returns (BoolRes);
+    rpc ListFiles(ListFilesReq) returns (ListFilesRes);
+}
