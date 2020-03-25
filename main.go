@@ -1,12 +1,11 @@
 package main
 
 import (
-	"romano.com/server"
+	"time"
+	"file-service.com/server"
 )
 
-var serverManager server.Server
-
 func main() {
-	serverManager := server.New(":4040");
-	serverManager.CreateListener();
+	time.Sleep(1 * time.Second)
+	server.New(":4040").Listen()
 }

@@ -2,6 +2,14 @@ syntax = "proto3";
 
 package proto;
 
+service AddService {
+    rpc Create(CreateReq) returns (FileRes);
+    rpc Read(ReadReq) returns (FileRes);
+    rpc Update(UpdateReq) returns (FileRes);
+    rpc Delete(DeleteReq) returns (BoolRes);
+    rpc ListFiles(ListFilesReq) returns (ListFilesRes);
+}
+
 message CreateReq {
     File file = 1;
 }
@@ -53,12 +61,4 @@ message AddOwnerReq {
     string owner = 1;
     string ownerToAdd = 2;
     string path = 3;
-}
-
-service AddService {
-    rpc Create(CreateReq) returns (FileRes);
-    rpc Read(ReadReq) returns (FileRes);
-    rpc Update(UpdateReq) returns (FileRes);
-    rpc Delete(DeleteReq) returns (BoolRes);
-    rpc ListFiles(ListFilesReq) returns (ListFilesRes);
 }

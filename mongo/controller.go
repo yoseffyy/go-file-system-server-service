@@ -1,11 +1,11 @@
 package mongo
 
 import (
+	"context"
 	"fmt"
 	"log"
-	"context"
 	"go.mongodb.org/mongo-driver/mongo"
-    "go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Controller struct {
@@ -13,29 +13,23 @@ type Controller struct {
 }
 
 func NewController(url string) Controller {
-
-	var newController Controller;
-
+	controller := Controller{}
 	client, err := mongo.NewClient(options.Client().ApplyURI(url))
 	if err != nil {
 		log.Fatal(err)
 	}
-	
-	err = client.Connect(context.TODO())
-    if err != nil {
-        log.Fatal(err)
-	}
-	
-	err = client.Ping(context.TODO(), nil);
-	if err != nil {
-		panic(err);
+
+	if err = client.Connect(context.TODO()); err != nil {
+		log.Fatal(err)
 	}
 
-	fmt.Println("Conncet to db");
-	
-	newController.Client = client;
-	
-	return newController;
+	if err = client.Ping(context.TODO(), nil); err != nil {
+		log.Fatal(err)
+	}
 
+	fmt.Println("Conncet", url)
+
+	controller.Client = client
+
+	return controller
 }
-
