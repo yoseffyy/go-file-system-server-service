@@ -8,7 +8,7 @@ import (
 
 	fileModel "file-service.com/model"
 	"file-service.com/mongo"
-	"file-service.com/proto"
+	files "file-service.com/proto"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc"
@@ -19,22 +19,18 @@ type Server struct {
 	port string
 }
 
-const (
-	mongoID string = "_id"
-)
-
 var mongoManager mongo.Controller
 
 func New(port string) *Server {
 	s := Server{}
 	s.port = port
-	mongoManager = mongo.NewController("mongodb://mongo:27017")
+	mongoManager = mongo.NewController("mongodb://localhost:27017")
 	return &s
 }
 
 func (s *Server) Listen() {
 	srv := grpc.NewServer()
-	proto.RegisterAddServiceServer(srv, s)
+	files.RegisterFileServiceServer(srv, s)
 	// reflection.Register(srv)
 
 	listener, err := net.Listen("tcp", s.port)
@@ -48,7 +44,7 @@ func (s *Server) Listen() {
 	}
 }
 
-func (s *Server) Create(ctx context.Context, req *proto.CreateReq) (*proto.FileRes, error) {
+func (s *Server) Create(ctx context.Context, req *files.CreateReq) (*files.FileRes, error) {
 	if req.GetFile() == nil {
 		log.Fatal("The file is empty")
 	}
@@ -67,7 +63,7 @@ func (s *Server) Create(ctx context.Context, req *proto.CreateReq) (*proto.FileR
 		return nil, err
 	}
 
-	protoFile := &proto.File{
+	protoFile := &files.File{
 		Id:       file.ID.Hex(),
 		Owner:    file.Owner,
 		Path:     file.Path,
@@ -75,21 +71,21 @@ func (s *Server) Create(ctx context.Context, req *proto.CreateReq) (*proto.FileR
 		IsFolder: file.IsFolder,
 	}
 
-	result := &proto.FileRes{
+	result := &files.FileRes{
 		File: protoFile,
 	}
 
 	return result, nil
 }
 
-func (s *Server) Read(ctx context.Context, req *proto.ReadReq) (*proto.FileRes, error) {
+func (s *Server) Read(ctx context.Context, req *files.ReadReq) (*files.FileRes, error) {
 	owner := req.GetOwner()
 	oid, err := primitive.ObjectIDFromHex(req.GetId())
 	if err != nil {
 		return nil, fmt.Errorf("InvalidArgument %s", fmt.Sprintf("Could not convert to ObjectId: %v", err))
 	}
 
-	file, err := fileModel.Fined(ctx, mongoManager.Client, bson.M{mongoID: oid})
+	file, err := fileModel.Fined(ctx, mongoManager.Client, bson.M{"_id": oid})
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +94,7 @@ func (s *Server) Read(ctx context.Context, req *proto.ReadReq) (*proto.FileRes, 
 		return nil, fmt.Errorf("permittion %s", fmt.Sprintf("permittion denied %s: %v", req.GetOwner(), err))
 	}
 
-	protoFile := &proto.File{
+	protoFile := &files.File{
 		Id:       file.ID.Hex(),
 		Owner:    file.Owner,
 		Path:     file.Path,
@@ -106,14 +102,14 @@ func (s *Server) Read(ctx context.Context, req *proto.ReadReq) (*proto.FileRes, 
 		IsFolder: file.IsFolder,
 	}
 
-	result := &proto.FileRes{
+	result := &files.FileRes{
 		File: protoFile,
 	}
 
 	return result, nil
 }
 
-func (s *Server) Update(ctx context.Context, req *proto.UpdateReq) (*proto.FileRes, error) {
+func (s *Server) Update(ctx context.Context, req *files.UpdateReq) (*files.FileRes, error) {
 	oid, err := primitive.ObjectIDFromHex(req.GetFile().Id)
 	if err != nil {
 		return nil, fmt.Errorf("InvalidArgument %s", fmt.Sprintf("Could not convert to ObjectId: %v", err))
@@ -126,12 +122,12 @@ func (s *Server) Update(ctx context.Context, req *proto.UpdateReq) (*proto.FileR
 
 	newFile := fileModel.New(owner, name, path, isFolder)
 
-	updatedFile, err := newFile.Update(ctx, mongoManager.Client, bson.M{mongoID: oid})
+	updatedFile, err := newFile.Update(ctx, mongoManager.Client, bson.M{"_id": oid})
 	if err != nil {
 		return nil, err
 	}
 
-	protoFile := &proto.File{
+	protoFile := &files.File{
 		Id:       updatedFile.ID.Hex(),
 		Owner:    updatedFile.Owner,
 		Path:     updatedFile.Path,
@@ -139,51 +135,47 @@ func (s *Server) Update(ctx context.Context, req *proto.UpdateReq) (*proto.FileR
 		IsFolder: updatedFile.IsFolder,
 	}
 
-	result := &proto.FileRes{
+	result := &files.FileRes{
 		File: protoFile,
 	}
 
 	return result, nil
 }
 
-func (s *Server) Delete(ctx context.Context, req *proto.DeleteReq) (*proto.BoolRes, error) {
+func (s *Server) Delete(ctx context.Context, req *files.DeleteReq) (*files.DeleteRes, error) {
 	owner := req.GetOwner()
 	oid, err := primitive.ObjectIDFromHex(req.GetId())
 	if err != nil {
 		return nil, fmt.Errorf("InvalidArgument %s", fmt.Sprintf("Could not convert to ObjectId: %v", err))
 	}
 
-	file, err := fileModel.Fined(ctx, mongoManager.Client, bson.M{mongoID: oid})
+	err = fileModel.Delete(ctx, mongoManager.Client, bson.M{"_id": oid, "owner": owner})
 	if err != nil {
 		return nil, err
 	}
 
-	if file.Owner != owner {
-		return nil, fmt.Errorf("permittion %s", fmt.Sprintf("permittion denied %s: %v", req.GetOwner(), err))
-	}
-
-	return &proto.BoolRes{Success: true}, nil
+	return &files.DeleteRes{Success: true}, nil
 }
 
-func (s *Server) ListFiles(ctx context.Context, req *proto.ListFilesReq) (*proto.ListFilesRes, error) {
+func (s *Server) ListFiles(ctx context.Context, req *files.ListFilesReq) (*files.ListFilesRes, error) {
 
 	owner := req.GetOwner()
-	files, err := fileModel.FinedAll(ctx, mongoManager.Client, bson.M{"owner": owner})
+	filesList, err := fileModel.FinedAll(ctx, mongoManager.Client, bson.M{"owner": owner})
 	if err != nil {
 		return nil, err
 	}
 
-	list := []*proto.File{}
+	list := []*files.File{}
 
-	for i := 0; i < len(files); i++ {
-		list = append(list, &proto.File{
-			Id:       files[i].ID.Hex(),
-			Owner:    files[i].Owner,
-			Path:     files[i].Path,
-			Name:     files[i].Name,
-			IsFolder: files[i].IsFolder,
+	for i := 0; i < len(filesList); i++ {
+		list = append(list, &files.File{
+			Id:       filesList[i].ID.Hex(),
+			Owner:    filesList[i].Owner,
+			Path:     filesList[i].Path,
+			Name:     filesList[i].Name,
+			IsFolder: filesList[i].IsFolder,
 		})
 	}
 
-	return &proto.ListFilesRes{Files: list}, nil
+	return &files.ListFilesRes{Files: list}, nil
 }

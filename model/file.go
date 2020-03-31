@@ -82,6 +82,18 @@ func Fined(ctx context.Context, client *mongo.Client, filter bson.M) (*File, err
 	return &decoded, nil
 }
 
+func Delete(ctx context.Context, client *mongo.Client, filter bson.M) ( error) {
+	collection := client.Database(dbName).Collection(collectionName)
+
+	_, err := collection.DeleteOne(ctx, filter)
+
+	if err != nil {
+		return fmt.Errorf("Could not felede file with supplied ID: %v", err)
+	}
+
+	return nil
+}
+
 func FinedAll(ctx context.Context, client *mongo.Client, filter bson.M) ([]*File, error) {
 	files := []*File{}
 	collection := client.Database(dbName).Collection(collectionName)

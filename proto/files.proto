@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-package proto;
+package files;
 
-service AddService {
+service FileService {
     rpc Create(CreateReq) returns (FileRes);
     rpc Read(ReadReq) returns (FileRes);
     rpc Update(UpdateReq) returns (FileRes);
-    rpc Delete(DeleteReq) returns (BoolRes);
+    rpc Delete(DeleteReq) returns (DeleteRes);
     rpc ListFiles(ListFilesReq) returns (ListFilesRes);
 }
 
@@ -15,25 +15,25 @@ message CreateReq {
 }
 
 message ReadReq {
-    string owner = 1;
-    string id = 2;
+    string id = 1;
+    string owner = 2;
 }
 
 message UpdateReq {
-    string owner = 1;
-    File file = 2;
+    File file = 1;
 }
 
 message DeleteReq {
-    string owner = 1;
-    string id = 2;
+    string id = 1;
+    string owner = 2;
+    
 }
 
 message FileRes {
     File file = 1;
 }
 
-message BoolRes {
+message DeleteRes {
     bool success = 1;
 }
 
@@ -51,14 +51,4 @@ message File {
     string path = 3;
     string name = 4;
     bool isFolder = 5;
-}
-
-message Owner {
-    string id = 1;
-}
-
-message AddOwnerReq {
-    string owner = 1;
-    string ownerToAdd = 2;
-    string path = 3;
 }
