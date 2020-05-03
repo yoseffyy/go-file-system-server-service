@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package files;
+
+service FileService {
+    rpc Create(CreateReq) returns (FileRes);
+    rpc Read(ReadReq) returns (FileRes);
+    rpc Update(UpdateReq) returns (FileRes);
+    rpc Delete(DeleteReq) returns (DeleteRes);
+    rpc ListFiles(ListFilesReq) returns (ListFilesRes);
+}
+
+message CreateReq {
+    File file = 1;
+}
+
+message ReadReq {
+    string id = 1;
+    string owner = 2;
+}
+
+message UpdateReq {
+    File file = 1;
+}
+
+message DeleteReq {
+    string id = 1;
+    string owner = 2;
+    
+}
+
+message FileRes {
+    File file = 1;
+}
+
+message DeleteRes {
+    bool success = 1;
+}
+
+message ListFilesReq {
+    string owner = 1;
+}
+
+message ListFilesRes {
+    repeated File files = 1;
+}
+
+message File {
+    string id = 1;
+    string owner = 2;
+    string path = 3;
+    string name = 4;
+    bool isFolder = 5;
+}
