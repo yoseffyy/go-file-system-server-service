@@ -27,7 +27,7 @@ func NewController(url string) Controller {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Conncet", url)
+	fmt.Println("Connect", url)
 
 	controller.Client = client
 

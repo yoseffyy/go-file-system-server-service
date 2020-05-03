@@ -1,11 +1,11 @@
 package main
 
 import (
+	"github.com/yosef32/go-file-system-server-service/server"
 	"time"
-	"file-service.com/server"
 )
 
 func main() {
 	time.Sleep(1 * time.Second)
-	server.New(":4040").Listen()
+	server.NewServer().Serve()
 }

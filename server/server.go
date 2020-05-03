@@ -3,44 +3,43 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/yosef32/go-file-system-server-service/config"
 	"log"
 	"net"
 
-	fileModel "file-service.com/model"
-	"file-service.com/mongo"
-	files "file-service.com/proto"
+	fileModel "github.com/yosef32/go-file-system-server-service/model"
+	"github.com/yosef32/go-file-system-server-service/mongo"
+	files "github.com/yosef32/go-file-system-server-service/proto"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc"
-	// "google.golang.org/grpc/reflection"
 )
 
-type Server struct {
-	port string
-}
+type Server struct{}
 
 var mongoManager mongo.Controller
 
-func New(port string) *Server {
-	s := Server{}
-	s.port = port
-	mongoManager = mongo.NewController("mongodb://localhost:27017")
-	return &s
+func NewServer() *Server {
+	config.InitMongo()
+	mongoManager = mongo.NewController(config.MongoEndPoint())
+	return &Server{}
 }
 
-func (s *Server) Listen() {
+func (s *Server) Serve() {
+
+	config.InitGrpc()
+
 	srv := grpc.NewServer()
 	files.RegisterFileServiceServer(srv, s)
-	// reflection.Register(srv)
 
-	listener, err := net.Listen("tcp", s.port)
+	listener, err := net.Listen(config.GrpcNetwork(), config.GrpcPort())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("GRpc run on" + s.port)
+	fmt.Println("gRpc run on " + config.GrpcPort())
 	if e := srv.Serve(listener); e != nil {
-		log.Fatal("GRpc not run: ", err.Error())
+		log.Fatal("gRpc not run: ", err.Error())
 	}
 }
 
@@ -121,6 +120,7 @@ func (s *Server) Update(ctx context.Context, req *files.UpdateReq) (*files.FileR
 	isFolder := req.GetFile().IsFolder
 
 	newFile := fileModel.New(owner, name, path, isFolder)
+	newFile.ID = oid
 
 	updatedFile, err := newFile.Update(ctx, mongoManager.Client, bson.M{"_id": oid})
 	if err != nil {
@@ -160,7 +160,7 @@ func (s *Server) Delete(ctx context.Context, req *files.DeleteReq) (*files.Delet
 func (s *Server) ListFiles(ctx context.Context, req *files.ListFilesReq) (*files.ListFilesRes, error) {
 
 	owner := req.GetOwner()
-	filesList, err := fileModel.FinedAll(ctx, mongoManager.Client, bson.M{"owner": owner})
+	filesList, err := fileModel.FindAll(ctx, mongoManager.Client, bson.M{"owner": owner})
 	if err != nil {
 		return nil, err
 	}

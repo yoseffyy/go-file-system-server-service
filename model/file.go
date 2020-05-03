@@ -3,15 +3,11 @@ package fileModel
 import (
 	"context"
 	"fmt"
+	"github.com/yosef32/go-file-system-server-service/config"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-)
-
-const (
-	dbName         string = "test"
-	collectionName string = "files"
 )
 
 type File struct {
@@ -33,7 +29,7 @@ func New(owner string, name string, path string, isFolder bool) *File {
 }
 
 func (f *File) Insert(ctx context.Context, client *mongo.Client) (*File, error) {
-	collection := client.Database(dbName).Collection(collectionName)
+	collection := client.Database(config.DBName()).Collection(config.CollectionName())
 	res, err := collection.InsertOne(ctx, f)
 	if err != nil {
 		return nil, fmt.Errorf("Internal error: %v", err)
@@ -43,7 +39,7 @@ func (f *File) Insert(ctx context.Context, client *mongo.Client) (*File, error) 
 }
 
 func (f *File) Update(ctx context.Context, client *mongo.Client, filter bson.M) (*File, error) {
-	collection := client.Database(dbName).Collection(collectionName)
+	collection := client.Database(config.DBName()).Collection(config.CollectionName())
 
 	updatedData := bson.M{}
 	fileBytes, err := bson.Marshal(f)
@@ -68,7 +64,7 @@ func (f *File) Update(ctx context.Context, client *mongo.Client, filter bson.M) 
 }
 
 func Fined(ctx context.Context, client *mongo.Client, filter bson.M) (*File, error) {
-	collection := client.Database(dbName).Collection(collectionName)
+	collection := client.Database(config.DBName()).Collection(config.CollectionName())
 
 	result := collection.FindOne(ctx, filter)
 
@@ -82,8 +78,8 @@ func Fined(ctx context.Context, client *mongo.Client, filter bson.M) (*File, err
 	return &decoded, nil
 }
 
-func Delete(ctx context.Context, client *mongo.Client, filter bson.M) ( error) {
-	collection := client.Database(dbName).Collection(collectionName)
+func Delete(ctx context.Context, client *mongo.Client, filter bson.M) error {
+	collection := client.Database(config.DBName()).Collection(config.CollectionName())
 
 	_, err := collection.DeleteOne(ctx, filter)
 
@@ -94,9 +90,9 @@ func Delete(ctx context.Context, client *mongo.Client, filter bson.M) ( error) {
 	return nil
 }
 
-func FinedAll(ctx context.Context, client *mongo.Client, filter bson.M) ([]*File, error) {
+func FindAll(ctx context.Context, client *mongo.Client, filter bson.M) ([]*File, error) {
 	files := []*File{}
-	collection := client.Database(dbName).Collection(collectionName)
+	collection := client.Database(config.DBName()).Collection(config.CollectionName())
 
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
